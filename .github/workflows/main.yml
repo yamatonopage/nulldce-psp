@@ -1,0 +1,39 @@
+name: Build nulldce-psp
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake build-essential git libpng-dev libglib2.0-dev
+
+      - name: Setup PSPSDK
+        run: |
+          git clone https://github.com/PSP-Archive/nulldce-psp.git
+          cd nulldce-psp
+
+
+      - name: Build nulldce-psp
+        run: |
+          cd psp
+          make
+
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nulldce-psp-build
+          path: |
+            psp/EBOOT.PBP
