@@ -1,11 +1,9 @@
-name: CI
+name: Build nulldce-psp
 
 on:
   push:
-    branches: 
-      - '*'
-    tags:
-      - v*
+    branches: ['*']
+    tags: [v*]
   pull_request:
   repository_dispatch:
     types: [run_build]
@@ -13,37 +11,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        docker_tag: [fjtrujy/pspdev]
 
-    container: ${{ matrix.docker_tag }}:latest
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        apk add build-base git bash cmake
-    
+      - name: Run build in fjtrujy/pspdev container
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/work \
+            -w /work \
+            fjtrujy/pspdev \
+            bash -c "cd psp && make clean && make"
 
-    - name: Compile project
-      run: |
-        cd ./psp
-        make clean
-        make
-
-    - name: Get short SHA
-      id: slug
-      run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
-    
-    - name: Sanitized Docker Tag
-      id: docker_tag
-      run: echo "::set-output name=sha8::$(echo ${{matrix.docker_tag}} | sed s:/:__:g)"
-
-    - name: Upload artifacts
-      if: ${{ success() }}
-      uses: actions/upload-artifact@v3
-      with:
-        name: hello-${{ steps.slug.outputs.sha8 }}-${{ steps.docker_tag.outputs.sha8 }}
-        path: |
-          ./psp/EBOOT.PBP
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: EBOOT.PBP
+          path: psp/EBOOT.PBP
